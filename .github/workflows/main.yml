@@ -57,7 +57,7 @@ jobs:
   apply:
     name: Terraform Apply (Approved)
     needs: manual_validation
-    runs-on: [self-hosted, Windows]
+    runs-on:  ubuntu-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -73,6 +73,10 @@ jobs:
         id: init
         run: terraform init
         working-directory: ${{ github.workspace }}${{ '/' }}${{ github.event.inputs.working_directory }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0 # Aap apni pasand ka version likh sakte hai        
       - name: Terraform Apply
         id: apply
         working-directory: ${{ github.workspace }}${{ '/' }}${{ github.event.inputs.working_directory }}

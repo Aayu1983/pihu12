@@ -4,14 +4,14 @@ on:
       working_directory:
         description: "Path to Terraform working directory"
         required: true
-        default: "rg"
+        default: "rg/"
 permissions:
   id-token: write
   contents: read
 jobs:
   terraform:
     name: Terraform on Window Self-Host Runner
-    runs-on: [self-hosted, Windows]
+    runs-on: ubuntu-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}

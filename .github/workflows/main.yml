@@ -24,10 +24,8 @@ jobs:
       # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v5.0.0
-      - name: verify working directory
-        run: |
-          Get-ChildItem ${{ github.workspace }}
-      # Terraform Init
+   
+       Terraform Init
       - name: Terraform Init
         id: init
         run: terraform init

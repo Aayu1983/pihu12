@@ -29,15 +29,17 @@ jobs:
  
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
- 
+        uses: actions/checkout@v4 
       - name: Terraform Init & Plan
-        shell: pwsh
-        run: |
-          cd ${{ env.WORK_DIR }}
-          terraform init
-          terraform plan -out=tfplan
-        
+       shell: pwsh
+       run: |
+         if (-not (Test-Path "${{ env.WORK_DIR }}")) {
+           throw "WORK_DIR not found: ${{ env.WORK_DIR }}"
+         }
+         cd "${{ env.WORK_DIR }}"
+         terraform init -input=false
+         terraform plan -input=false -out=tfplan
+         
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:

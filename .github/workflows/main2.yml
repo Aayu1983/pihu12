@@ -30,21 +30,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4 
-      - name: Terraform Init & Plan
-       shell: pwsh
-       run: |
-         if (-not (Test-Path "${{ env.WORK_DIR }}")) {
-           throw "WORK_DIR not found: ${{ env.WORK_DIR }}"
-         }
-         cd "${{ env.WORK_DIR }}"
-         terraform init -input=false
-         terraform plan -input=false -out=tfplan
-         
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: ${{ env.WORK_DIR }}/tfplan
+       - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ${{ github.workspace }}${{ '/' }}${{ github.event.inputs.working_directory }}
+      # Terraform Validate
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+        working-directory: ${{ env.WORK_DIR }}
+      # Terraform Plan
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan
+        working-directory: ${{ env.WORK_DIR }}
  
   terraform-apply:
     name: Terraform Apply

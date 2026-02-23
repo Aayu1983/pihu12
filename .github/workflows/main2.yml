@@ -5,7 +5,8 @@ on:
       working_directory:
         description: "Path to Terraform working directory"
         required: true
-        default: "./rg" 
+        default: "./rg"
+ 
 permissions:
   id-token: write
   contents: read

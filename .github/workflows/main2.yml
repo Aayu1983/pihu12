@@ -1,16 +1,24 @@
+name: "infra pipeline"
+
 on:
   workflow_dispatch:
     inputs:
       working_directory:
-        description: "Path to Terraform working directory"
+        description: "Path to Terraform working directory (relative to repo root)"
         required: true
         default: "rg"
+
 permissions:
   id-token: write
   contents: read
+
+env:
+  # Fallback so empty na ho
+  WORK_DIR: ${{ github.event.inputs.working_directory || 'rg' }}
+
 jobs:
   terraform:
-    name: Terraform on Window Self-Host Runner
+    name: Terraform on GitHub Windows runner
     runs-on: windows-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -19,35 +27,38 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       TF_IN_AUTOMATION: true
       TF_INPUT: false
-      WORK_DIR: ${{ github.event.inputs.working_directory }}
+
     steps:
-      # Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v4
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.0 # 
-          
-      - name: verify working directory
+          terraform_version: 1.7.5
+
+      - name: Verify working directory
+        shell: pwsh
         run: |
-          Get-Childitem ${{ github.workspace }}
-   
-       #Terraform Init
+          Write-Host "Repo root:"; Get-ChildItem -Force
+          Write-Host "WORK_DIR: '${{ env.WORK_DIR }}'"
+
       - name: Terraform Init
-        id: init
-        run: terraform init
-        working-directory: ${{ github.workspace }}${{ '/' }}${{ github.event.inputs.working_directory }}
-      # Terraform Validate
+        shell: pwsh
+        working-directory: ${{ env.WORK_DIR }}
+        run: terraform init -input=false -no-color
+
       - name: Terraform Validate
-        id: validate
-        run: terraform validate
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
-      # Terraform Plan
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan
+        run: terraform validate -no-color
+
+      - name: Terraform Plan (save + print)
+        shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
+        run: |
+          terraform plan -input=false -no-color -out=tfplan
+          terraform show -no-color tfplan
 
   manual_validation:
     name: Manual Validation (Environment Approval)
@@ -61,7 +72,7 @@ jobs:
   apply:
     name: Terraform Apply (Approved)
     needs: manual_validation
-    runs-on:  windows-latest
+    runs-on: windows-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -69,20 +80,22 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       TF_IN_AUTOMATION: true
       TF_INPUT: false
-      WORK_DIR: ${{ github.event.inputs.working_directory }}
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.0 # Aap apni pasand ka version likh sakte hai
+          terraform_version: 1.7.5
+
       - name: Terraform Init
-        id: init
-        run: terraform init
-        working-directory: ${{ github.workspace }}${{ '/' }}${{ github.event.inputs.working_directory }}
-        
+        shell: pwsh
+        working-directory: ${{ env.WORK_DIR }}
+        run: terraform init -input=false -no-color
+
       - name: Terraform Apply
-        id: apply
-        working-directory: ${{ github.workspace }}${{ '/' }}${{ github.event.inputs.working_directory }}
-        run: terraform apply -auto-approve
+        shell: pwsh
+        working-directory: ${{ env.WORK_DIR }}
+        run: terraform apply -input=false -auto-approve

@@ -1,4 +1,4 @@
-name: "infra pipeline"
+name: "New infra pipeline"
  
 on:
   push:

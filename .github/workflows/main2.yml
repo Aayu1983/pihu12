@@ -10,7 +10,7 @@ on:
       working_directory:
         description: "Path to Terraform"
         required: true
-        default: "rg"
+        default: "/rg/"
  
 permissions:
   id-token: write

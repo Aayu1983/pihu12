@@ -27,7 +27,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.0 # Aap apni pasand ka version likh sakte hain
+          terraform_version: 1.5.0 # 
+          
+      - name: verify working directory
+        run: |
+          Get-Childitem ${{ github.workspace }}
    
        #Terraform Init
       - name: Terraform Init

@@ -19,7 +19,7 @@ permissions:
 jobs:
   terraform-plan:
     name: Terraform Plan
-    runs-on: windows-lates
+    runs-on: windows-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -48,7 +48,7 @@ jobs:
     name: Terraform Apply
     needs: terraform-plan
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: windows-lates 
+    runs-on: windows-latest
     environment: dev
     
     env:

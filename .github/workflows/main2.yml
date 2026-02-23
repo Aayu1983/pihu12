@@ -1,4 +1,4 @@
-name: "infra pipeline"
+name: "Final infra pipeline"
  
 on:
   push:
@@ -30,6 +30,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
  
       - name: Terraform Init & Plan
         shell: pwsh
@@ -67,6 +73,12 @@ jobs:
         with:
           name: tfplan
           path: ${{ env.WORK_DIR }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.
+
  
       - name: Terraform Init & Apply
         shell: pwsh # 

@@ -14,7 +14,7 @@ on:
         default: "rg"
 
 permissions:
-  id-token: write  # OIDC ke liye compulsory hai
+  id-token: write  
   contents: read
 
 jobs:
@@ -27,20 +27,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Login to Azure using OIDC
       - name: Az CLI Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }} # Managed Identity / App Registration ID
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Initial login sub
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
 
-      # 2. Fetch Secrets from Key Vault
       - name: Get Secrets from Key Vault
         uses: azure/get-keyvault-secrets@v1
         with:
-          keyvault: "your-keyvault-name" # Yaha apna KV name dalein
-          secrets: 'ARM-SUBSCRIPTION-ID, ARM-TENANT-ID' # KV mein jo name hain
+          keyvault: "${{ vars.KEYVAULT_NAME }}"
+          secrets: 'ARM-SUBSCRIPTION-ID, ARM-TENANT-ID' 
         id: kvsecrets
 
       - name: Terraform Init & Plan
@@ -50,7 +48,7 @@ jobs:
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
           $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs.ARM-SUBSCRIPTION-ID }}"
           $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs.ARM-TENANT-ID }}"
-          $env:ARM_USE_OIDC = "true" # Terraform ko batana ki OIDC use karna hai
+          $env:ARM_USE_OIDC = "true"
           
           terraform init
           terraform plan -out="${{ github.workspace }}\tfplan"

@@ -1,0 +1,113 @@
+name: Multi-Env infra Pipeline with OIDC & Key Vault
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Select Environment (dev, uat, dr, prod)"
+        required: true
+        type: choice
+        options: [dev, uat, dr, prod]
+      working_directory:
+        description: "Terraform folder path"
+        required: true
+        default: "rg"
+
+permissions:
+  id-token: write  # OIDC ke liye compulsory hai
+  contents: read
+
+jobs:
+  terraform_plan:
+    name: "Plan - ${{ github.event.inputs.target_env }}"
+    runs-on: [self-hosted, Windows]
+    environment: ${{ github.event.inputs.target_env }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Login to Azure using OIDC
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }} # Managed Identity / App Registration ID
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Initial login sub
+
+      # 2. Fetch Secrets from Key Vault
+      - name: Get Secrets from Key Vault
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "your-keyvault-name" # Yaha apna KV name dalein
+          secrets: 'ARM-SUBSCRIPTION-ID, ARM-TENANT-ID' # KV mein jo name hain
+        id: kvsecrets
+
+      - name: Terraform Init & Plan
+        shell: pwsh
+        run: |
+          # Environment variables set karna jo Terraform use karega
+          $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs.ARM-SUBSCRIPTION-ID }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs.ARM-TENANT-ID }}"
+          $env:ARM_USE_OIDC = "true" # Terraform ko batana ki OIDC use karna hai
+          
+          terraform init
+          terraform plan -out="${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}
+
+      - name: Upload Plan File
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}\tfplan
+
+  manual_approval:
+    name: "Wait for Approval"
+    needs: terraform_plan
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_env }} 
+    steps:
+      - run: echo "Waiting for approval..."
+
+  terraform_apply:
+    name: "Apply - ${{ github.event.inputs.target_env }}"
+    needs: manual_approval
+    runs-on: [self-hosted, Windows]
+    environment: ${{ github.event.inputs.target_env }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Plan File
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}
+
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Secrets for Apply
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "your-keyvault-name"
+          secrets: 'ARM-SUBSCRIPTION-ID, ARM-TENANT-ID'
+        id: kvsecrets
+
+      - name: Terraform Apply
+        shell: pwsh
+        run: |
+          $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs.ARM-SUBSCRIPTION-ID }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs.ARM-TENANT-ID }}"
+          $env:ARM_USE_OIDC = "true"
+          
+          terraform init
+          terraform apply -auto-approve "${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}

@@ -44,10 +44,10 @@ jobs:
       - name: Terraform Init & Plan
         shell: pwsh
         run: |
-          # Environment variables set karna jo Terraform use karega
+          
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
-          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs.ARM-SUBSCRIPTION-ID }}"
-          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs.ARM-TENANT-ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
           $env:ARM_USE_OIDC = "true"
           
           terraform init
@@ -102,8 +102,8 @@ jobs:
         shell: pwsh
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
-          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs.ARM-SUBSCRIPTION-ID }}"
-          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs.ARM-TENANT-ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
           $env:ARM_USE_OIDC = "true"
           
           terraform init

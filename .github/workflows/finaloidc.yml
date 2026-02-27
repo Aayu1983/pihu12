@@ -1,0 +1,120 @@
+name: Multi-Env infra Pipeline with  Key Vault
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Select Environment (dev, uat, dr, prod)"
+        required: true
+        type: choice
+        options: [dev, uat, dr, prod]
+      working_directory:
+        description: "Terraform folder path"
+        required: true
+        default: "rg"
+
+permissions:
+  id-token: write  
+  contents: read
+
+jobs:
+  terraform_plan:
+    name: "Plan - ${{ github.event.inputs.target_env }}"
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.target_env }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+
+      - name: Get Secrets from Key Vault
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "${{ vars.KEYVAULT_NAME }}"
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+        id: kvsecrets
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Init & Plan
+        shell: pwsh
+        run: |
+          $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_USE_OIDC = "true"
+          
+          terraform init
+          terraform plan -out="${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}
+
+      - name: Upload Plan File
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}\tfplan
+
+  manual_approval:
+    name: "Wait for Approval"
+    needs: terraform_plan
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.target_env }} 
+    steps:
+      - run: echo "Waiting for approval for ${{ github.event.inputs.target_env }}..."
+
+  terraform_apply:
+    name: "Apply - ${{ github.event.inputs.target_env }}"
+    needs: manual_approval
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.target_env }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Plan File
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}
+
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Secrets for Apply
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "${{ vars.KEYVAULT_NAME }}"
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+        id: kvsecrets
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Apply
+        shell: pwsh
+        run: |
+          $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_USE_OIDC = "true"
+          
+          terraform init
+          terraform apply -auto-approve "${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}

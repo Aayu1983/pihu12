@@ -55,7 +55,7 @@ jobs:
           $env:ARM_USE_OIDC = "true"
           
           terraform init
-          terraform plan -out= "tfplan"
+          terraform plan -out="tfplan"
           terraform show -no-color tfplan
         working-directory: ${{ github.event.inputs.working_directory }}
 

@@ -55,14 +55,15 @@ jobs:
           $env:ARM_USE_OIDC = "true"
           
           terraform init
-          terraform plan -out="${{ github.workspace }}\tfplan"
+          terraform plan -out= "tfplan"
+          terraform show -no-color tfplan
         working-directory: ${{ github.event.inputs.working_directory }}
 
       - name: Upload Plan File
         uses: actions/upload-artifact@v4
         with:
           name: tf-plan-${{ github.event.inputs.target_env }}
-          path: ${{ github.event.inputs.working_directory }}\tfplan
+          path: ${{ github.event.inputs.working_directory }}/tfplan
 
   manual_approval:
     name: "Wait for Approval"

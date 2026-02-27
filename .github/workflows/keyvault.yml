@@ -100,8 +100,133 @@ jobs:
         uses: azure/get-keyvault-secrets@v1
         with:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
-          secrets: ${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
         id: kvsecrets
+Gemini said
+Aapki pipeline ab kaafi had tak sahi direction mein hai, lekin terraform_apply job mein abhi bhi 3-4 galtiyan hain jo ise fail kar dengi. Maine poori pipeline ko fix kar diya hai.
+
+Kya-kya fix kiya gaya hai:
+Missing Setup Terraform: apply job ek naye runner par chalti hai, isliye wahan bhi hashicorp/setup-terraform step zaroori hai.
+
+Secret Syntax Error: Aapke Get Secrets for Apply wale step mein end mein ek extra single quote (') tha, use hata diya hai.
+
+Artifact Path Consistency: download-artifact mein path wahi hona chahiye jahan terraform apply use dhoond sake.
+
+Generic format fix: format function ka logic apply job mein bhi sahi se apply kar diya hai.
+
+Updated & Fixed Pipeline
+YAML
+name: Multi-Env infra Pipeline with OIDC & Key Vault
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Select Environment (dev, uat, dr, prod)"
+        required: true
+        type: choice
+        options: [dev, uat, dr, prod]
+      working_directory:
+        description: "Terraform folder path"
+        required: true
+        default: "rg"
+
+permissions:
+  id-token: write  
+  contents: read
+
+jobs:
+  terraform_plan:
+    name: "Plan - ${{ github.event.inputs.target_env }}"
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.target_env }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+
+      - name: Get Secrets from Key Vault
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "${{ vars.KEYVAULT_NAME }}"
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+        id: kvsecrets
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Init & Plan
+        shell: pwsh
+        run: |
+          $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_USE_OIDC = "true"
+          
+          terraform init
+          terraform plan -out="${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}
+
+      - name: Upload Plan File
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}\tfplan
+
+  manual_approval:
+    name: "Wait for Approval"
+    needs: terraform_plan
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.target_env }} 
+    steps:
+      - run: echo "Waiting for approval for ${{ github.event.inputs.target_env }}..."
+
+  terraform_apply:
+    name: "Apply - ${{ github.event.inputs.target_env }}"
+    needs: manual_approval
+    runs-on: windows-latest
+    environment: ${{ github.event.inputs.target_env }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Download artifact in the workspace
+      - name: Download Plan File
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}
+
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Secrets for Apply
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "${{ vars.KEYVAULT_NAME }}"
+          # Fixed syntax here (removed extra quote)
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+        id: kvsecrets
+
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
 
       - name: Terraform Apply
         shell: pwsh

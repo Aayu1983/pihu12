@@ -20,7 +20,7 @@ permissions:
 jobs:
   terraform_plan:
     name: "Plan - ${{ github.event.inputs.target_env }}"
-    runs-on: [windows-latest]
+    runs-on: [self-hosted, Windows]
     environment: ${{ github.event.inputs.target_env }}
     
     steps:
@@ -71,7 +71,7 @@ jobs:
   terraform_apply:
     name: "Apply - ${{ github.event.inputs.target_env }}"
     needs: manual_approval
-    runs-on: [windows-latest]
+    runs-on:  [self-hosted, Windows]
     environment: ${{ github.event.inputs.target_env }}
     
     steps:

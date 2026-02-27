@@ -40,6 +40,11 @@ jobs:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
           secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
         id: kvsecrets
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+         terraform_version: "1.7.0"
 
       - name: Terraform Init & Plan
         shell: pwsh

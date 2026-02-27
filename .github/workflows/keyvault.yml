@@ -38,7 +38,7 @@ jobs:
         uses: azure/get-keyvault-secrets@v1
         with:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
-          secrets: ${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
         id: kvsecrets
 
       - name: Terraform Init & Plan

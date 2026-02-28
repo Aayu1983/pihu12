@@ -47,7 +47,7 @@ jobs:
       #    terraform_wrapper: false
 
       - name: Terraform Init & Plan
-        shell: pwsh
+        shell: powershell
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
           $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
@@ -110,7 +110,7 @@ jobs:
      #     terraform_wrapper: false
 
       - name: Terraform Apply
-        shell: pwsh
+        shell: powershell
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
           $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"

@@ -1,4 +1,4 @@
-name: Multi-Env XXXXinfra Pipeline using key valut
+name: meri pipeline 
 
 on:
   workflow_dispatch:

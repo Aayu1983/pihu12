@@ -40,15 +40,15 @@ jobs:
         uses: azure/get-keyvault-secrets@v1
         with:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
-          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID, ${{ github.event.inputs.target_env }}-CLIENT-SECRET'
+          secrets: ' ${{ github.event.inputs.target_env }}-CLIENT-SECRET'
         id: kvsecrets
         
       - name: Terraform Init & Plan
         shell: powershell
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
-          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
-          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_SUBSCRIPTION_ID = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          $env:ARM_TENANT_ID = "${{ secrets.AZURE_TENANT_ID }}"
           $env:ARM_CLIENT_SECRET = "${{ steps.kvsecrets.outputs[format('{0}-CLIENT-SECRET', github.event.inputs.target_env)] }}"     
           
           terraform init
@@ -85,20 +85,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tf-plan-${{ github.event.inputs.target_env }}
-          path: ${{ github.event.inputs.working_directory }} # Sahi folder mein download karein
+          path: ${{ github.event.inputs.working_directory }} 
 
       - name: Az CLI Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: "${{ secrets.AZURE_CLIENT_ID }}"
+          tenant-id: "${{ secrets.AZURE_TENANT_ID }}"
+          subscription-id: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
       - name: Get Secrets from Key Vault
         uses: azure/get-keyvault-secrets@v1
         with:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
-          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID, ${{ github.event.inputs.target_env }}-CLIENT-SECRET'
+          secrets: ' ${{ github.event.inputs.target_env }}-CLIENT-SECRET'
         id: kvsecrets
 
       - name: Terraform Apply
@@ -106,7 +106,7 @@ jobs:
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
           $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
-          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
+          $env:ARM_TENANT_ID = "${{ secrets.AZURE_TENANT_ID }}"
           $env:ARM_CLIENT_SECRET = "${{ steps.kvsecrets.outputs[format('{0}-CLIENT-SECRET', github.event.inputs.target_env)] }}"
           
           terraform init

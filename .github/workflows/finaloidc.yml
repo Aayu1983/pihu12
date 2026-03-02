@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       target_env:
-        description: "Select Environment (dev, uat, dr, prod)"
+        description: "Select Environment (dev, uat,sit, dr, prod)"
         required: true
         type: choice
         options: [dev, uat, dr, prod]

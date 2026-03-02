@@ -1,5 +1,4 @@
 name: Multi-Env infra Pipeline with  Key Vault
-
 on:
   workflow_dispatch:
     inputs:
@@ -38,21 +37,16 @@ jobs:
         uses: azure/get-keyvault-secrets@v1
         with:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
-          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID, ${{ github.event.inputs.target_env }}-CLIENT-SECRET'
         id: kvsecrets
         
-     # - name: Setup Terraform
-     #   uses: hashicorp/setup-terraform@v3
-     #     terraform_version: "1.7.0"
-      #    terraform_wrapper: false
-
       - name: Terraform Init & Plan
         shell: powershell
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
-          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
-          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
-          $env:ARM_USE_OIDC = "true"
+          $env:ARM_SUBSCRIPTION_ID = "${{ vars.AZURE_SUBSCRIPTION_ID }}"
+          $env:ARM_TENANT_ID = "${{ vars.AZURE_TENANT_ID }}"
+          $env:ARM_CLIENT_SECRET = "${{ steps.kvsecrets.outputs[format('{0}-CLIENT-SECRET', github.event.inputs.target_env)] }}"  
           
           terraform init
           terraform plan -out="tfplan"
@@ -96,26 +90,21 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Get Secrets for Apply
+      - name: Get Secrets from Key Vault
         uses: azure/get-keyvault-secrets@v1
         with:
           keyvault: "${{ vars.KEYVAULT_NAME }}"
-          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID'
+          secrets: '${{ github.event.inputs.target_env }}-SUBSCRIPTION-ID, ${{ github.event.inputs.target_env }}-TENANT-ID, ${{ github.event.inputs.target_env }}-CLIENT-SECRET'
         id: kvsecrets
 
-     # - name: Setup Terraform
-     #   uses: hashicorp/setup-terraform@v3
-     #   with:
-     #     terraform_version: "1.7.0"
-     #     terraform_wrapper: false
 
       - name: Terraform Apply
         shell: powershell
         run: |
           $env:ARM_CLIENT_ID = "${{ secrets.AZURE_CLIENT_ID }}"
-          $env:ARM_SUBSCRIPTION_ID = "${{ steps.kvsecrets.outputs[format('{0}-SUBSCRIPTION-ID', github.event.inputs.target_env)] }}"
-          $env:ARM_TENANT_ID = "${{ steps.kvsecrets.outputs[format('{0}-TENANT-ID', github.event.inputs.target_env)] }}"
-          $env:ARM_USE_OIDC = "true"
+          $env:ARM_SUBSCRIPTION_ID = "${{ vars.AZURE_SUBSCRIPTION_ID }}"
+          $env:ARM_TENANT_ID = "${{ vars.AZURE_TENANT_ID }}"
+          $env:ARM_CLIENT_SECRET = "${{ steps.kvsecrets.outputs[format('{0}-CLIENT-SECRET', github.event.inputs.target_env)] }}"
           
           terraform init
           terraform apply -auto-approve "${{ github.workspace }}\tfplan"

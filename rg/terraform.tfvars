@@ -1,10 +1,10 @@
 Rg = {
   "rg1" = {
     name     = "rg1"
-    location = "eastus"
+    location = "westcenteral"
   }
   "rg2" = {
     name     = "rg2"
-    location = "eastus"
+    location = "westcenteral"
   }
 } 

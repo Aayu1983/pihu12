@@ -1,0 +1,88 @@
+ame:  Multi-Env  infra Pipeline with manual gate 
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Select Environment (uat,sit,production)"
+        required: true
+        type: choice
+        options: [uat,sit,production]
+      working_directory:
+        description: "Terraform folder path"
+        required: true
+        default: "rg"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform_plan:
+    name: "Plan - ${{ github.event.inputs.target_env }}"
+    runs-on: [self-hosted, Windows]
+    environment: ${{ github.event.inputs.target_env }}
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      # Variable use karne ka tarika:
+      TF_VAR_env_name: ${{ vars.ENV_NAME }} 
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ github.event.inputs.working_directory }}
+
+      - name: Terraform Plan
+        run: terraform plan -out="${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}
+
+      - name: Upload Plan File
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}\tfplan
+
+  
+  manual_approval:
+    name: "Wait for Approval: ${{ github.event.inputs.target_env }}"
+    needs: terraform_plan
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_env }} 
+    steps:
+      - name: Waiting
+        run: echo "Waiting for user to click 'Review deployments' button..."
+
+  terraform_apply:
+    name: "Apply - ${{ github.event.inputs.target_env }}"
+    needs: manual_approval
+    runs-on: [self-hosted, Windows]
+    environment: ${{ github.event.inputs.target_env }}
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Plan File
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-plan-${{ github.event.inputs.target_env }}
+          path: ${{ github.workspace }}
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ github.event.inputs.working_directory }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve "${{ github.workspace }}\tfplan"
+        working-directory: ${{ github.event.inputs.working_directory }}

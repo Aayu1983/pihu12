@@ -1,4 +1,4 @@
-ame:  Multi-Env  infra Pipeline with manual gate 
+name: Multi-Env  infra Pipeline with manual gate 
 
 on:
   workflow_dispatch:

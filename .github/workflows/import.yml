@@ -1,0 +1,38 @@
+name: Azure Terraform Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_id:
+        description: 'The full Azure Resource ID'
+        required: true
+      resource_address:
+        description: 'The Terraform address (e.g., azurerm_resource_group.example)'
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_USE_OIDC: true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: HashiCorp - Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Import
+        run: |
+          terraform import "${{ github.event.inputs.resource_address }}" "${{ github.event.inputs.resource_id }}"

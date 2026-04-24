@@ -8,7 +8,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "myrg"
-    storage_account_name = "mystgs12345678"
+    storage_account_name = "stgpractic12345"
     container_name       = "mycontainer"
     key                  = "prod-route-table.tfstate"
   }

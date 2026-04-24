@@ -10,7 +10,7 @@ terraform {
     resource_group_name  = "myrg"
     storage_account_name = "mystgs12345678"
     container_name       = "mycontainer"
-    key                  = "prod-publicip.tfstate" 
+    key                  = "prod-publicip.tfstate"
   }
 }
 
@@ -22,5 +22,11 @@ provider "azurerm" {
 
 
 resource "azurerm_public_ip" "imported_ip" {
+name =  "prod-public-ip"
+resource_group_name = "myrg"
+location = "eastus"
+allocation_method = "Static"
+zones = ["1" , "2" , "3"]
+ddos_protection_mode    = "Enabled" 
 
 }

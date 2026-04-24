@@ -1,3 +1,3 @@
-resource "azurerm_resource_group" "my_imported_rg" {
+resource "azurerm_public_ip" "imported_ip" {
 
 }

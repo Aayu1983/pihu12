@@ -18,3 +18,9 @@ provider "azurerm" {
   features {}
   subscription_id = "5e2ade1f-9bb8-4b4f-874f-5fd49f66c2fa"
 }
+
+
+
+resource "azurerm_public_ip" "imported_ip" {
+
+}

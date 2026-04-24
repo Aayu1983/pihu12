@@ -36,8 +36,8 @@ jobs:
       - name: Terraform Import
         run: |
           terraform import "${{ github.event.inputs.resource_address }}" "${{ github.event.inputs.resource_id }}"
-      - name: Terraform Plan
-        run: terraform plan
+      - name: Terraform Plan and Generate Config
+        run: terraform plan -generate-config-out=generated_code.tf
 
       - name: Terraform Show
         run: terraform show -no-color > imported_state.txt

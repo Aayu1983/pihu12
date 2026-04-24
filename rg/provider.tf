@@ -5,11 +5,16 @@ terraform {
       version = "4.14.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "myrg"
+    storage_account_name = "mystgs12345678"
+    container_name       = "mycontainer"
+    key                  = "prod-publicip.tfstate" 
+  }
 }
 
 provider "azurerm" {
-  features {
-
-  }
-  subscription_id = "d8cc2ff0-4966-4b41-849d-de4d01f122c5"
+  features {}
+  subscription_id = "5e2ade1f-9bb8-4b4f-874f-5fd49f66c2fa"
 }

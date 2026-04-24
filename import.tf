@@ -21,7 +21,7 @@ provider "azurerm" {
 
 
 
-resource "azurerm_route_table" "route_table" {
-
-
+import {
+  to = azurerm_route_table.route_table
+  id = "/subscriptions/5e2ade1f-9bb8-4b4f-874f-5fd49f66c2fa/resourceGroups/myrg/providers/Microsoft.Network/routeTables/rt-Prodvnet-br"
 }

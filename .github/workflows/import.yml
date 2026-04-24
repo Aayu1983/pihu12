@@ -2,13 +2,7 @@ name: Azure Terraform Import
 
 on:
   workflow_dispatch:
-    inputs:
-      resource_id:
-        description: 'The full Azure Resource ID'
-        required: true
-      resource_address:
-        description: 'The Terraform address (e.g., azurerm_resource_group.example)'
-        required: true
+
 
 permissions:
   id-token: write
@@ -29,21 +23,25 @@ jobs:
 
       - name: HashiCorp - Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false 
 
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Import
-        run: |
-          terraform import "${{ github.event.inputs.resource_address }}" "${{ github.event.inputs.resource_id }}"
       - name: Terraform Plan and Generate Config
+        
         run: terraform plan -generate-config-out=generated_code.tf
 
       - name: Terraform Show
+       
         run: terraform show -no-color > imported_state.txt
 
-      - name: Upload State Preview
+      - name: Upload Import Results
+        
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-state-preview
-          path: imported_state.txt
+          name: terraform-import-results
+          path: |
+            generated_code.tf
+            imported_state.txt

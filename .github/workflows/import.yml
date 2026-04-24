@@ -36,3 +36,14 @@ jobs:
       - name: Terraform Import
         run: |
           terraform import "${{ github.event.inputs.resource_address }}" "${{ github.event.inputs.resource_id }}"
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Show
+        run: terraform show -no-color > imported_state.txt
+
+      - name: Upload State Preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-preview
+          path: imported_state.txt

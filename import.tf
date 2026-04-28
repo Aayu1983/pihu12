@@ -7,9 +7,9 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "prodansh"
-    storage_account_name = "ansh09876"
-    container_name       = "aayu"
+    resource_group_name  = "rg-terraform"
+    storage_account_name = "raju089"
+    container_name       = "content1"
     key                  = "appinside.tfstate"
   }
 }

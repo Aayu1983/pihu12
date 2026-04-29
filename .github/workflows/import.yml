@@ -2,6 +2,11 @@ name: Azure Terraform Import
 
 on:
   workflow_dispatch:
+   inputs:
+      terraform_directory:
+        description: "Folder path (e.g., environments/prod)"
+        required: true
+        default: "rg"
 
 
 permissions:

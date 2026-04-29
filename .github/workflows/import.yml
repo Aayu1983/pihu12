@@ -2,43 +2,48 @@ name: Azure Terraform Import
 
 on:
   workflow_dispatch:
-   inputs:
+    inputs:
       terraform_directory:
-        description: "Folder path (e.g., environments/prod)"
+        description: "Folder path (e.g., routetable)"
         required: true
-        default: "rg"
-
+        default: "routetable" # Aapka folder name yahan hona chahiye
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  import:
+  terraform-job:
     runs-on: ubuntu-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_USE_OIDC: true
+    
+    defaults:
+      run:
+        working-directory: ${{ github.event.inputs.terraform_directory }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: HashiCorp - Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
+          terraform_version: 1.7.0 # Version 1.5+ zaroori hai import block ke liye
           terraform_wrapper: false 
+
       - name: Terraform Init
         run: terraform init
-      - name: Terraform Import Command        
-        run: terraform import 'azurerm_route_table.route_block["table1"]' /subscriptions/7f9ffab5-15de-40df-80c3-9f0897275cd1/resourceGroups/myrg/providers/Microsoft.Network/routeTables/rt-proddr-br-apgtwsnet      
 
-      - name: Upload Import Results        
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-import-results
-          path: |
-            generated_code.tf
-            imported_state.txt
+      # IMPORT COMMAND KI ZAROORAT NAHI HAI agar code mein import {} block hai.
+      # Plan hi import ka kaam shuru kar dega.
+      
       - name: Terraform Plan
         run: terraform plan
+
+      # State file update karne ke liye Apply zaroori hai
+           #  - name: Terraform Apply
+           #    run: terraform apply -auto-approve

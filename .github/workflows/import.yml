@@ -45,5 +45,5 @@ jobs:
         run: terraform plan
 
       # State file update karne ke liye Apply zaroori hai
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+     # - name: Terraform Apply
+     #   run: terraform apply -auto-approve

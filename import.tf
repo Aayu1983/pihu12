@@ -22,5 +22,5 @@ provider "azurerm" {
 
 import {
   to = azurerm_route_table.route_block
-  id = "/subscriptions/7f9ffab5-15de-40df-80c3-9f0897275cd1/resourcegroups/myrg/providers/Microsoft.Network/routeTables/rt-proddr-br-apgtwsnet"
+  id = "/subscriptions/7f9ffab5-15de-40df-80c3-9f0897275cd1/resourceGroups/myrg/providers/Microsoft.Network/routeTables/rt-proddr-br-apgtwsnet"
 }

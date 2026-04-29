@@ -1,6 +1,6 @@
 route_tables = {
-  proddr_route = {
-    route_table_name              = "rt-proddr-br-apgtwsnet"
+  "table1"= {
+    route_table_name              = "rt-proddr-br-apgtwsnet" 
     location                      = "westcentralus"
     resource_group_name           = "myrg"
     bgp_route_propagation_enabled = true
@@ -24,5 +24,6 @@ route_tables = {
         next_hop_type          = "VirtualAppliance"
       }
     ]
+    tags = {}
   }
 }

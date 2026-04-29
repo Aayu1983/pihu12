@@ -18,3 +18,7 @@ resource "azurerm_route_table" "route_block" {
     }
   }
 }
+moved {
+  from = azurerm_route_table.route_block
+  to   = azurerm_route_table.route_block["proddr_route"]
+}

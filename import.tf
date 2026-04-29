@@ -11,6 +11,7 @@ terraform {
     storage_account_name = "raju089"
     container_name       = "content1"
     key                  = "appinside.tfstate"
+   subscription_id      = "7f9ffab5-15de-40df-80c3-9f0897275cd1"
   }
 }
 

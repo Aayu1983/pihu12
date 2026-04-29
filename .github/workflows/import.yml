@@ -35,3 +35,5 @@ jobs:
           path: |
             generated_code.tf
             imported_state.txt
+      - name: Terraform Plan
+        run: terraform plan

@@ -6,7 +6,7 @@ on:
       terraform_directory:
         description: "Folder path (e.g., routetable)"
         required: true
-        default: "routetable" # Aapka folder name yahan hona chahiye
+        default: "routetable" 
 
 permissions:
   id-token: write
@@ -32,18 +32,16 @@ jobs:
       - name: HashiCorp - Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.0 # Version 1.5+ zaroori hai import block ke liye
+          terraform_version: 1.7.0 
           terraform_wrapper: false 
 
       - name: Terraform Init
         run: terraform init
 
-      # IMPORT COMMAND KI ZAROORAT NAHI HAI agar code mein import {} block hai.
-      # Plan hi import ka kaam shuru kar dega.
-      
+     
       - name: Terraform Plan
         run: terraform plan
 
-      # State file update karne ke liye Apply zaroori hai
+    
      # - name: Terraform Apply
      #   run: terraform apply -auto-approve
